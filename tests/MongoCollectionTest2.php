@@ -30,6 +30,21 @@ class MongoCollectionTest2 extends PHPUnit_Framework_TestCase
         $this->assertArrayHasKey("ok", $result, json_encode($result));
     }
 
+    public function testSparseIndex() {
+        $this->object->insert(array("x" => 1));
+        $this->object->insert(array("category" => "fruit", "name" => "apple"));
+        $this->object->ensureIndex(array("x" => 1), array("sparse" => true));
+
+        // The "category" item will not be in the sparse index
+        $result = iterator_to_array($this->object->find()->sort(array("x" => 1)));
+        $this->assertEquals(count($result), 1);
+
+        // After dropping the sparse index, the item will be found again.
+        $this->object->deleteIndex(array("x" => 1));
+        $result = iterator_to_array($this->object->find()->sort(array("x" => 1)));
+        $this->assertEquals(count($result), 2);
+    }
+
     public function testFields() {
         $this->object->insert(array("x" => array(1,2,3,4,5)));
         $results = $this->object->find(array(),array("x" => array('$slice' => 3)))->getNext();
